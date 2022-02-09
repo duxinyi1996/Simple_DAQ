@@ -30,7 +30,7 @@ def get_T(R):
     else:
         ww80 = c80
         for i in range(0,len(c80)):
-            ww80[i]= c80[i]*cmath.cos(i*cmath.acos(((cmath.log10(R)-1.72528854694)-(2.3131455111-cmath.log10(R)))/(2.3131455111-1.72528854694)))
+            ww80[i] = c80[i]*cmath.cos(i*cmath.acos(((cmath.log10(R)-1.72528854694)-(2.3131455111-cmath.log10(R)))/(2.3131455111-1.72528854694)))
         result = sum(ww80)
     return Decimal(result.real).quantize(Decimal("0.00"))
 
