@@ -41,7 +41,7 @@ def SR830_check_ovl(address):
     ovl2 = SR830_handle.query(f"LIAS? 2")
     time.sleep(0.02)
     SR830_handle.close()
-    if int(ovl0)==1 and int(ovl1)==1 and int(ovl2)==1
+    if int(ovl0)==1 and int(ovl1)==1 and int(ovl2)==1:
         ovl =True
     else:
         ovl =False
