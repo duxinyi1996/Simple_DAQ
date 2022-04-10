@@ -3,7 +3,7 @@
 Created on Tue Sep  1 22:18:28 2020
 
 @author: Crow108
-@revised: Shilling Du 02092020 11:24
+@revised: Shilling Du 02092020 11:24 added function get_ohm_4pt
 """
 
 import numpy as np
