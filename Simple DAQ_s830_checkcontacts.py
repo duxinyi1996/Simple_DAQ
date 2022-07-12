@@ -14,17 +14,17 @@ folder_path = os.getcwd()
 if folder_path not in sys.path:
     sys.path.append(folder_path)
 from vna_analysis import get_smith_data, change_vna_settings
-from SR830 import SR830_get_x, SR830_get_y, SR830_set_frequency, SR830_set_amplitude,
+from SR830 import SR830_get_x, SR830_get_y, SR830_set_frequency, SR830_set_amplitude
 from keithley_2400 import get_ohm_4pt
 
 rm = pyvisa.ResourceManager()
 
 SR830_gpib = 'GPIB0::5::INSTR'
-data_dir = r"C:\Users\ICET\OneDrive - Washington University in St. Louis\wustl\2022spring\data\20220518_SD_004a_checkContacts"
+data_dir = r"C:\Users\ICET\OneDrive - Washington University in St. Louis\wustl\2022spring\data\20220602_SD_004a_ICET\Lockin practice"
 
-my_note = "2022.05.18 ICET_breakoutbox Roomtemp \n lockin, 2pt direct measurements, Just lockin itself 0.010V on 1Mohm, measuring current"
-title = "_" + "2pts"
-order = "012"
+my_note = "2022.06.09 lockin on 1nF for Vx, Vy"
+title = "_" + "Capacitor"
+order = "004"
 
 axis = f"SR830_x_{order}\t\t\t" + f"SR830_y_{order}\t\t\t" + f"SR830_freq_{order}\t\t\t" + f"timestamp_{order}\t\t\t"
 
@@ -36,7 +36,7 @@ timestamp =[]
 ###############################
 SR830_set_amplitude(SR830_gpib, 0.004)
 time.sleep(5)
-SR830_set_amplitude(SR830_gpib, 0.01)
+SR830_set_amplitude(SR830_gpib, 0.010)
 time.sleep(5)
 for k in range(0,75):
     if k<10:
@@ -59,13 +59,13 @@ for k in range(0,75):
         time.sleep(0.3)
 
 data = np.column_stack((x, y,freq,timestamp))
-file_name = f"SD_004a_contacts_ohm_Hz.{order} "
+file_name = f"1nF_Voltage_f.{order} "
     #file_name = f"SDCPW_Background_at_Rmtemp.{span}"
     #read_frequency = "\n VNA is set at frequency range:"+ f"{np.min(vs.freqs) / 1E9:0.6f},{np.max(vs.freqs) / 1E9:0.6f} GHz"
 os.makedirs(data_dir + '\\' + datetime.now().strftime('%Y%m%d')+ title, exist_ok=True)
 np.savetxt(data_dir + '\\' + datetime.now().strftime('%Y%m%d')+ title + "/" + file_name, data, delimiter='\t',\
            header = f"{datetime.now().strftime('%Y%m%d')}"+" "+f"{datetime.now().strftime('%H%M%S')}"+'\n'+ \
-           my_note + ', R_f_curve'+'\n' + f"{axis}")
+           my_note + ', V_f_curve'+'\n' + f"{axis}")
 SR830_set_amplitude(SR830_gpib, 0.004)    
 SR830_set_frequency(SR830_gpib, 17.777)
 

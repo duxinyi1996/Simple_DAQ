@@ -40,7 +40,10 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+<<<<<<< HEAD
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+=======
+>>>>>>> 0ccc2987db2e00aa4116411a2161483972b3ad08
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -98,7 +101,11 @@
       </list>
     </recent_temporary>
   </component>
+<<<<<<< HEAD
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+=======
+  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+>>>>>>> 0ccc2987db2e00aa4116411a2161483972b3ad08
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -111,5 +118,11 @@
       <updated>1644390227450</updated>
     </task>
     <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="456" y="168" key="SettingsEditor" timestamp="1644430601812">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="456" y="168" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1644430601812" />
   </component>
 </project>
