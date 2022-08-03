@@ -16,7 +16,7 @@ if folder_path not in sys.path:
     #from vna_analysis import get_smith_data, change_vna_settings
 from SR830 import SR830_get_x, SR830_get_y
 from keithley_2400 import set_voltage_V, get_voltage_2000, initialize, output_on
-from hp34471A import get_voltage_hp34461a
+from hp34461A import get_voltage_hp34461a
 rm = pyvisa.ResourceManager()
 '''---------------------INPUT BEFORE RUN---------------------'''
 SR830_gpib_1 = 'GPIB0::5::INSTR'
