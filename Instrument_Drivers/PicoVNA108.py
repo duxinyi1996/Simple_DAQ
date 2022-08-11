@@ -25,7 +25,7 @@ def get_picoVNA_smith(port='S21',f_min=0.3,f_max=8500,number_of_points=1001,powe
         ans=picoVNA.LoadCal(r'C:\Users\ICET\Documents\Pico Technology\PicoVNA3\FacCal.cal')
         freq_step = np.ceil((f_max-f_min)/number_of_points*1E5)/1E5
         flag = picoVNA.SetFreqPlan(f_min,freq_step,number_of_points,power,bandwidth)
-        print(flag)
+        #print(flag)
         picoVNA.SetEnhance('Aver',Average)
 
         picoVNA.Measure('ALL');

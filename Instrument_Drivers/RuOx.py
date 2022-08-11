@@ -6,5 +6,3 @@ def RuOx_get_T(r):
                     log(r) - 6.91109) ** 7 + 72.825 * (log(r) - 6.91109) ** 8)
 
     return temp
-
-print(RuOx_get_T(1464.1))
