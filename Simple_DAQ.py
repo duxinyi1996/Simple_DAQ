@@ -18,18 +18,17 @@ def pop_window(measurements = 8):
     window = tkinter.Tk()
     window.title('Specify your measurement below')
     window.geometry('1500x900')
-
 # a three column entry for VNA measurement
     tkinter.Label(window,text ='variable name', height=2).grid(row=0,column=0,padx=5,pady=5)
     variable_name_1_entry = tkinter.Entry(window)
     variable_name_1_entry.grid(row=1,column=0,padx=5,pady=5)
 
-
+    time.sleep(10)
 # Visa address selection
     tkinter.Label(window,text='Visa address', height=2).grid(row=2,column=0,padx=5,pady=5)
     comvalue_1 = tkinter.StringVar()
     comboxlist_1 = ttk.Combobox(window,textvariable=comvalue_1)
-    comboxlist_1['values']=tuple(rm.list_resources())
+    comboxlist_1['values']= visa_list
     comboxlist_1.current(0)
     comboxlist_1.grid(row=3,column=0,padx=5,pady=5)
 
@@ -104,7 +103,8 @@ def pop_window(measurements = 8):
         tkinter.Label(window, text='Visa address', height=2).grid(row=2, column=c, padx=5, pady=5)
         globals()[f'comvalue_1_{c}'] = tkinter.StringVar()
         globals()[f'comboxlist_1_{c}'] = ttk.Combobox(window, textvariable=globals()[f'comvalue_1_{c}'])
-        globals()[f'comboxlist_1_{c}']['values'] = tuple(rm.list_resources())
+        globals()[f'comboxlist_1_{c}']['values'] = visa_list
+        #globals()[f'comboxlist_1_{c}']['values'] = tuple(['please refresh'])
         globals()[f'comboxlist_1_{c}'].current(0)
         globals()[f'comboxlist_1_{c}'].grid(row=3, column=c, padx=5, pady=5)
 
@@ -151,11 +151,15 @@ def pop_window(measurements = 8):
     for i in range(1,measurements):
         add_seperate_measurement(i+2)
     column_total = measurements + 2
-    select_directory = askdirectory(title="please choose where to save file")
+    def choose_folder():
+        select_directory = askdirectory(title="choose where to save your file")
+        dir_entry.delete(0,'end')
+        dir_entry.insert(0,select_directory)
     tkinter.Label(window, text='file directory', height=2).grid(row=10, column=0,padx=5,pady=5,columnspan=column_total)
     dir_entry = tkinter.Entry(window)
-    dir_entry.insert(0, select_directory)
-    dir_entry.grid(row=11, column=0, padx=5,pady=5,sticky='ew',columnspan=column_total, rowspan=2)
+    dir_entry.insert(0,'please enter the folder path or choose folder')
+    dir_entry.grid(row=11, column=0, padx=5,pady=5,sticky='ew', columnspan=column_total-1, rowspan=2)
+    tkinter.Button(window, text="choose folder", command=choose_folder).grid(row=11, column=column_total-1, padx=5, pady=5)
     tkinter.Label(window, text='filename', height=2).grid(row=13, column=0,padx=5,pady=5,columnspan=column_total)
     filename_entry = tkinter.Entry(window)
     filename_entry.insert(0, 'name me please')
@@ -204,9 +208,10 @@ def pop_window(measurements = 8):
 
     tkinter.Button(window, text="Run", command = on_click).grid(row=23,column=0,columnspan=column_total,padx=5,pady=5)
 
-
     window.mainloop()
 
+
 rm = pyvisa.ResourceManager()
+visa_list = tuple(rm.list_resources())
 data = Mydata()
 pop_window()
