@@ -23,7 +23,6 @@ def pop_window(measurements = 8):
     variable_name_1_entry = tkinter.Entry(window)
     variable_name_1_entry.grid(row=1,column=0,padx=5,pady=5)
 
-    time.sleep(10)
 # Visa address selection
     tkinter.Label(window,text='Visa address', height=2).grid(row=2,column=0,padx=5,pady=5)
     comvalue_1 = tkinter.StringVar()
