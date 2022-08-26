@@ -488,7 +488,6 @@ def config_pid():
         print(data.pid['pid_variable_name'])
 
 
-
 def choose_config(profile):
     initialize_profile(profile)
     print('Measurements loaded')
@@ -510,6 +509,39 @@ def choose_config(profile):
         config_no_sweep()
     print('sweep finished')
     data.sweep_on_flag = False
+    sys.exit()
+
+def return_axis(x1=None,
+                x2=None,
+                y1=None,
+                y2=None,
+                selector=None):
+    def get_axis(x,selector):
+        if selector == 'data':
+            if x in data.data.keys():
+                dataToReturn = np.array(data.data[x]['data'])
+            else:
+                dataToReturn = None
+        elif selector == 'sweep':
+            if x in data.sweep.keys():
+                dataToReturn = np.array(data.sweep[x]['data'])
+            else:
+                dataToReturn = None
+        elif selector == 'pid':
+            if x in data.pid.keys():
+                dataToReturn = np.array(data.pid[x]['data'])
+            else:
+                dataToReturn = None
+        else:
+            dataToReturn = None
+        return dataToReturn
+
+    x_1 = get_axis(x1,selector)
+    x_2 = get_axis(x2,selector)
+    y_1 = get_axis(y1,selector)
+    y_2 = get_axis(y2,selector)
+    return x_1,x_2,y_1,y_2
+
 def print_dict(a):
     for key in a:
         print(f"{key}: {a[key]}")

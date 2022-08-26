@@ -8,6 +8,8 @@ from tkinter import ttk
 import tkinter as tk
 import queue
 from tkinter.filedialog import askdirectory, askopenfilename
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 folder_path = os.getcwd()
 if folder_path not in sys.path:
@@ -36,6 +38,7 @@ frame_pady = 10
 
 q = queue.Queue()
 reply = None
+reply_1 = None
 
 
 def background():
@@ -48,6 +51,15 @@ def background():
             reply = {'reply': 'display_visa_list', 'visa_list': instr_list}
         elif msg['query'] == 'run_measurement':
             choose_config(profile)
+        elif msg['query'] == 'plot':
+            x_1,x_2,y_1,y_2 = return_axis(
+                x1=msg['x1'],
+                x2=msg['x2'],
+                y1=msg['y1'],
+                y2=msg['y2'],
+                selector=msg['selector']
+                )
+            reply_1 = {'plot':{'x1':x_1,'x2':x_2,'y1':y_1,'y2':y_2,'flag':True}}
     while True:
         msg = q.get()
         msg_handler(msg)
@@ -951,6 +963,7 @@ def pop_window(measurements=8):
     def start_measurement():
         q.put({'query': 'run_measurement'})
 
+
     def display_visa_list(visa_list):
         for instrument in instrument_list:
             instrument.visa_address.combobox.config(values=('None',) + visa_list + ('Refresh',))
@@ -1045,5 +1058,247 @@ def pop_window(measurements=8):
     window.after(50, initialize)
     window.mainloop()
 
-pop_window()
+
+def plot_window():
+    global q, reply_1, profile
+    # Window
+    window = tk.Tk()
+    window.title('Realtime ploting')
+    window.geometry('800x450')
+    window.configure(bg=background_color)
+    window.columnconfigure(0, weight=1)
+    window.columnconfigure(1, weight=4)
+    window.rowconfigure(0, weight=1)
+    window.rowconfigure(1, weight=4)
+
+    class Combobox(tk.Frame):
+        def __init__(self, master, label, values=[None], width=160, height=60, box_color = box_color):
+            super().__init__(
+                master, width=width, height=height,
+                bg=box_color,
+                bd=3
+            )
+            self.grid_propagate(False)
+
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=1)
+
+            self.label = tk.Label(
+                self,
+                text=label,
+                height=1,
+                bg=box_color
+            )
+            self.label.grid(column=0, row=0, sticky='w')
+
+            self.combotext = tk.StringVar()
+            self.combobox = ttk.Combobox(
+                self,
+                textvariable=self.combotext
+            )
+            self.combobox['values'] = values
+            self.combobox.current(0)
+            self.combobox.grid(column=0, row=1, sticky='we')
+
+    plot_list = []
+
+    # Single instrument frame
+    class InstrumentFrame(tk.Frame):
+        def __init__(self, instrument_frame, label, width, height, row, column, rowspan=1, columnspan=1):
+            super().__init__(
+                instrument_frame, width=width, height=height,
+                bg=box_color,
+                highlightbackground=border_color,
+                highlightcolor=highlight_border_color,
+                highlightthickness=1.5,
+                bd=6
+            )
+            plot_list.append(self)
+            self.grid(
+                row=row, column=column,
+                rowspan=rowspan, columnspan=columnspan,
+                ipadx=frame_ipadx, ipady=frame_ipady,
+                padx=frame_padx, pady=frame_pady,
+                sticky='w'
+            )
+            self.grid_propagate(False)
+
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=9)
+            self.rowconfigure(2, weight=2)
+
+            self.label = tk.Label(
+                self,
+                text=label,
+                height=1,
+                bg=box_color
+            )
+            self.label.grid(row=0, columnspan=2)
+            self.content = tk.Frame(
+                self, width=width, height=height,
+                bg=box_color
+            )
+            self.content.grid(row=1, sticky='nw')
+
+
+            self.x_1 = Combobox(self.content, 'X1', values=['None'])
+            self.x_1.grid(row=0)
+            self.y_1 = Combobox(self.content, 'Y1', values=['None'])
+            self.y_1.grid(row=1)
+            self.x_2 = Combobox(self.content, 'X2', values=['None'])
+            self.x_2.grid(row=2)
+            self.y_2 = Combobox(self.content, 'Y2', values=['None'])
+            self.y_2.grid(row=3)
+            self.selector = Combobox(self.content, 'data_selector', values=['data','pid','sweep'])
+            self.selector.grid(row=3)
+            self.selector.combobox.current(0)
+
+
+            def event_get_axis(event):
+                global profile
+                if self.selector.combobox.get() == 'data':
+                    axis_list = profile['instrument_info']['variable_name'] + ['timestamp']
+                    self.x_1.combobox.config(valus=axis_list)
+                    self.y_1.combobox.config(valus=axis_list)
+                    self.x_2.combobox.config(valus=axis_list)
+                    self.y_2.combobox.config(valus=axis_list)
+                elif self.selector.combobox.get() == 'sweep':
+                    axis_list = profile['sweep_info']['variable_name'] + ['timestamp']
+                    self.x_1.combobox.config(valus=axis_list)
+                    self.y_1.combobox.config(valus=axis_list)
+                    self.x_2.combobox.config(valus=axis_list)
+                    self.y_2.combobox.config(valus=axis_list)
+                elif self.selector.combobox.get() == 'sweep':
+                    axis_list = ['time','temp']
+                    self.x_1.combobox.config(valus=axis_list)
+                    self.y_1.combobox.config(valus=axis_list)
+                    self.x_2.combobox.config(valus=axis_list)
+                    self.y_2.combobox.config(valus=axis_list)
+
+            self.selector.combobox.bind('<<ComboboxSelected>>', event_get_axis)
+
+            self.update_button = ttk.Button(self.content, text="Update", command=update_plot_axis, padding=4)
+            self.update_button.grid(row=5, column=0, sticky='ew')
+
+    plot_name = None
+    class PlotFrame(tk.Frame):
+        def __init__(self, plot_frame, width, height, row, column, rowspan=1, columnspan=1):
+            super().__init__(
+                plot_frame, width=width, height=height,
+                bg=box_color,
+                highlightbackground=border_color,
+                highlightcolor=highlight_border_color,
+                highlightthickness=1.5,
+                bd=6
+            )
+            plot_name = self
+            self.grid(
+                row=row, column=column,
+                rowspan=rowspan, columnspan=columnspan,
+                ipadx=frame_ipadx, ipady=frame_ipady,
+                padx=frame_padx, pady=frame_pady,
+                sticky='w'
+            )
+            self.grid_propagate(False)
+
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=9)
+            self.rowconfigure(2, weight=2)
+
+            fg = plt.figure(figsize=(5, 4), dpi=100)
+            gs = fg.add_gridspec(1, 2, width_ratios=[1, 0])
+            global ax,ax1,ax2
+            ax = fg.add_subplot(gs[0])
+            # plot another line that share the same x axis
+            ax1 = ax.twinx()
+            ax2 = ax.twiny()
+
+            canvas = FigureCanvasTkAgg(fg, master=self)  # A tk.DrawingArea.
+            canvas.draw()
+            canvas.get_tk_widget().grid()
+            self.x1 = None
+            self.x1_name = ''
+            self.x2 = None
+            self.x2_name = ''
+            self.y1 = None
+            self.y1_name = ''
+            self.y2 = None
+            self.y2_name = ''
+
+            def drawimg():
+                global ax,ax1,ax2
+                ax.clear()
+                ax1.clear()
+                ax2.clear()
+                if self.x1 != None and self.y1 != None:
+                    ax.set_xlabel(self.x1_name)
+                    ax.set_ylabel(self.y1_name)
+                    ax.plot(self.x1, self.y1, '.r')
+                    if self.y2 != None:
+                        ax1.set_ylabel(self.y2_name)
+                        ax1.plot(self.x1, self.y2, '.b')
+                    if self.x2 != None:
+                        ax1.set_xlabel(self.x2_name)
+                        ax1.plot(self.x2, self.y1, '.g')
+                canvas.draw()
+                window.after(100,drawimg)
+
+            drawimg()
+
+
+    def plotInWindow(dataToplot = None):
+        if dataToplot!= None:
+            plot_name.x1 = dataToplot['x1']
+            plot_name.x1_name = plot_list[0].x_1.combobox.get()
+            plot_name.y1 = dataToplot['y1']
+            plot_name.y1_name = plot_list[0].y_1.combobox.get()
+            plot_name.x2 = dataToplot['x2']
+            plot_name.x2_name = plot_list[0].x_2.combobox.get()
+            plot_name.y2 = dataToplot['y2']
+            plot_name.y2_name = plot_list[0].y_2.combobox.get()
+
+
+    def update_plot_axis():
+        q.put({'query': 'plot',
+               'x1': plot_list[0].x_1.combobox.get(),
+               'x2': plot_list[0].x_2.combobox.get(),
+               'y1': plot_list[0].y_1.combobox.get(),
+               'y2': plot_list[0].y_2.combobox.get(),
+               'selector': plot_list[0].selector.combobox.get()
+                })
+
+    def reply_handler():
+        global reply_1
+        if reply_1 != None:
+            if 'plot' in reply_1.keys():
+                if reply_1['plot']['flag'] == True:
+                    plotInWindow(reply_1['plot'])
+            reply_1 = None
+        window.after(50, reply_handler)
+
+    def initialize():
+        t = threading.Thread(target=pop_window)
+        t.daemon = True
+        t.start()
+
+        selection_panel = InstrumentFrame(
+            window,
+            label='Plot display',
+            width= 200,
+            height= 420,
+            column=0, row=0
+        )
+        plot_frame =PlotFrame(
+            window,
+            width= 520,
+            height= 420,
+            column=1, row=0
+        )
+
+        window.after(50, reply_handler)
+
+    window.after(50, initialize)
+    window.mainloop()
+
+plot_window()
 
