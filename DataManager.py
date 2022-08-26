@@ -111,7 +111,7 @@ class Mydata:
             self.data['VNA_imag']['data'] = self.data_VNA.imag
             self.vna_data_length = len(self.data_VNA.freqs)
             for name in self.data.keys():
-                if 'vna_data' not in self.data.keys():
+                if name != 'vna_data':
                     for i in range(0, self.vna_data_length):
                         self.data[name]['data'] += [get_value(
                             address=self.data[name]['instrument_address'],
@@ -125,7 +125,11 @@ class Mydata:
                     name=self.data[name]['instrument_name'],
                     func=self.data[name]['function'])
                 ]
-
+                # print(name,': ',self.data[name]['instrument_address'],self.data[name]['instrument_name'],self.data[name]['function'])
+                # print(name,get_value(
+                #     address=self.data[name]['instrument_address'],
+                #     name=self.data[name]['instrument_name'],
+                #     func=self.data[name]['function']))
     def file_order_update(self):
         order = int(self.file_order)
         order += 1
@@ -489,31 +493,38 @@ def config_pid():
 
 
 def choose_config(profile):
-    initialize_profile(profile)
-    print('Measurements loaded')
-    config_pid()
-    if len(profile['sweep_info']['variable_name']) == 0:
-        config_no_sweep()
-        print('Monitor functioning')
-    elif len(profile['sweep_info']['variable_name']) == 1:
-        t2 = threading.Thread(target=data.sweep_single)
-        data.sweep_on_flag = True
-        t2.start()
-        print('Single sweep starting')
-        config_no_sweep()
-    elif len(profile['sweep_info']['variable_name']) == 2:
-        t2 = threading.Thread(target=data.sweep_double)
-        data.sweep_on_flag = True
-        t2.start()
-        print('Double sweep starting')
-        config_no_sweep()
-    print('sweep finished')
-    data.sweep_on_flag = False
-    sys.exit()
+    global profile_data
+    profile_data = profile
+    def run_main():
+        global profile_data
+        profile = profile_data
+        initialize_profile(profile)
+        print('Measurements loaded')
+        config_pid()
+        if len(profile['sweep_info']['variable_name']) == 0:
+            config_no_sweep()
+            print('Monitor functioning')
+        elif len(profile['sweep_info']['variable_name']) == 1:
+            t2 = threading.Thread(target=data.sweep_single)
+            data.sweep_on_flag = True
+            t2.start()
+            print('Single sweep starting')
+            config_no_sweep()
+        elif len(profile['sweep_info']['variable_name']) == 2:
+            t2 = threading.Thread(target=data.sweep_double)
+            data.sweep_on_flag = True
+            t2.start()
+            print('Double sweep starting')
+            config_no_sweep()
+        print('sweep finished')
+        data.sweep_on_flag = False
+        sys.exit()
+    mainthread = threading.Thread(target=run_main)
+    mainthread.start()
 
 def return_axis(x1=None,
-                x2=None,
                 y1=None,
+                x2=None,
                 y2=None,
                 selector=None):
     def get_axis(x,selector):
@@ -521,26 +532,27 @@ def return_axis(x1=None,
             if x in data.data.keys():
                 dataToReturn = np.array(data.data[x]['data'])
             else:
-                dataToReturn = None
+                dataToReturn = np.array([None])
         elif selector == 'sweep':
             if x in data.sweep.keys():
                 dataToReturn = np.array(data.sweep[x]['data'])
             else:
-                dataToReturn = None
+                dataToReturn = np.array([None])
         elif selector == 'pid':
             if x in data.pid.keys():
                 dataToReturn = np.array(data.pid[x]['data'])
             else:
-                dataToReturn = None
+                dataToReturn = np.array([None])
         else:
-            dataToReturn = None
+            dataToReturn = np.array([None])
+            print('Not such trace with name: ',x )
         return dataToReturn
 
     x_1 = get_axis(x1,selector)
     x_2 = get_axis(x2,selector)
     y_1 = get_axis(y1,selector)
     y_2 = get_axis(y2,selector)
-    return x_1,x_2,y_1,y_2
+    return x_1,y_1,x_2,y_2
 
 def print_dict(a):
     for key in a:

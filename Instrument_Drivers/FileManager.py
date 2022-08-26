@@ -8,21 +8,22 @@ file = r"C:\Users\ICET\Desktop\Data\Simple_DAQ_test\constant volt\data\20220818\
 class MainData():
     def __init__(self,data_path=None, sweep_path=None, pid_path=None, fridge_log_path=None):
         self.all_data = {}
-        if data_path != None:
+        self.Mynote = ''
+        if data_path != None and data_path != 'Please enter or choose':
             self.read_data_file(file_path=data_path, label='data')
-        if sweep_path != None:
+        if sweep_path != None and sweep_path != 'Please enter or choose':
             self.read_data_file(file_path=sweep_path, label='sweep')
-        if pid_path != None:
+        if pid_path != None and pid_path != 'Please enter or choose':
             self.read_data_file(file_path=pid_path, label='pid')
-        if fridge_log_path != None:
+        if fridge_log_path != None and fridge_log_path != 'Please enter or choose':
             self.read_fridge_log()
         self.match_timestamp()
-        self.Mynote = ''
+
 
     def read_data_file(self, file_path, label):
         self.all_data.update({label:{}})
         order = 0
-        for root, dirs, files in os.walk(self.fridge_log_path):
+        for root, dirs, files in os.walk(file_path):
             for name in files:
                 order +=1
                 if order == 1:
@@ -33,19 +34,25 @@ class MainData():
                     for i in range(0, len(file_content)):
                         if b'#' not in file_content[i]:
                             break
-                    self.Mynote = file_content[:i-2][2:].decode('utf-8')
+                    note = ''
+                    for x in file_content[:i-2]:
+                        note += x[2:].decode('utf-8')
+                    if label == 'data' and note!= '':
+                        self.Mynote = note
                     axis = str(file_content[i-1][1:].decode('utf-8')).split()
                     data_in_file = np.loadtxt(os.path.join(root, name))
                     for i in range(0, len(axis)):
-                        self.all_data[label][axis[i]] = data_in_file[:i]
+                        self.all_data[label][axis[i]] = list(data_in_file[:,i])
                     print(order, '. ', os.path.join(root, name))
                     print('done')
                 else:
                     data_in_file = np.loadtxt(os.path.join(root, name))
                     for i in range(0, len(axis)):
-                        [self.all_data[label][axis[i]].append(x) for x in data_in_file[:i]]
+                        [self.all_data[label][axis[i]].append(x) for x in list(data_in_file[:,i])]
                     print(order, '. ', os.path.join(root, name))
                     print('done')
+                    # for key in self.all_data[label].keys():
+                    #     print(key, len(self.all_data[label][key]))
 
     def read_fridge_log(self):
         time = []
@@ -66,19 +73,28 @@ class MainData():
 
     def match_timestamp(self):
         print("matching started")
+        for name in self.all_data['data'].keys():
+            if 'timestamp' in name:
+                self.data_timestamp = name
+
         for key in self.all_data.keys():
             if key != 'data':
                 for name in self.all_data[key].keys():
-                    if name != 'timestamp':
+                    if 'timestamp' in name:
+                        self.match_timestamp = name
+                for name in self.all_data[key].keys():
+                    if 'timestamp' not in name:
+                        # print(len(self.all_data[key][self.match_timestamp]))
+                        # print(len(self.all_data[key][name]))
                         func = interpolate.interp1d(
-                            self.all_data[key]['timestamp'],
+                            self.all_data[key][self.match_timestamp],
                             self.all_data[key][name],
                             kind='nearest',
                             bounds_error=False)
-                        self.all_data['data'][key+'_'+name] = func(self.all_data['data']['timestamp'])
+                        self.all_data['data'][key+'_'+name] = func(self.all_data['data'][self.data_timestamp])
         print("matching completed")
 
-    def all_data_save(self,name,path):
+    def all_data_save(self,filename,path):
         self.axis = ''
         self.dataToSave = []
         for name in self.all_data['data'].keys():
@@ -86,12 +102,11 @@ class MainData():
             self.dataToSave += [self.all_data['data'][name]]
         self.dataToSave = np.column_stack(self.dataToSave)
         os.makedirs(path, exist_ok=True)
-        file_name = name + "_sum"
+        file_name = filename + "_sum"
         np.savetxt(path + "\\" + file_name,
                    self.dataToSave,
                    delimiter='\t',
-                   header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
-                          '\n' + self.Mynote + '\n' + f"{self.axis}"
+                   header= self.Mynote + '\n' + f"{self.axis}"
                    )
         print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ", file_name)
         print('data saved')

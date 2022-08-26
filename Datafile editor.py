@@ -192,7 +192,7 @@ def pop_window():
             )
             self.fridge_log_folder_path.grid(row=4, column=0, sticky='ne', columnspan=2)
 
-    file_list = []
+    file_list_1 = []
     class FileFrame(tk.Frame):
         def __init__(self, file_frame, label, width, height, row, column, rowspan=1, columnspan=1):
             super().__init__(
@@ -203,7 +203,7 @@ def pop_window():
                 highlightthickness=1.5,
                 bd=6
             )
-            file_list.append(self)
+            file_list_1.append(self)
             self.grid(
                 row=row, column=column,
                 rowspan=rowspan, columnspan=columnspan,
@@ -251,8 +251,8 @@ def pop_window():
                                     sweep_path=control_list[0].sweep_dir_entry.entry.get(),
                                     pid_path=control_list[0].pid_dir_entry.entry.get(),
                                     fridge_log_path=control_list[0].fridge_log_dir_entry.entry.get())
-                all_data.all_data_save(name=self.file_name.entry.get(),
-                                       path=self.dir_entry.entry.get())
+                all_data.all_data_save(filename=file_list_1[0].file_name.entry.get(),
+                                       path=file_list_1[0].dir_entry.entry.get())
 
             self.run_button = ttk.Button(self.content, text="Convert", command=convert, padding=4)
             self.run_button.grid(row=3, column=0, sticky='ew',columnspan=2)

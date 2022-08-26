@@ -39,35 +39,43 @@ frame_pady = 10
 q = queue.Queue()
 reply = None
 reply_1 = None
+start_time = time.time()
+last_datalength = 0
+
 
 
 def background():
-    global q, reply, profile
+    global q, reply, profile, reply_1
     rm = pyvisa.ResourceManager()
     instr_list = rm.list_resources()
     def msg_handler(msg):
-        global reply
-        if msg['query'] == 'refresh_visa':
-            reply = {'reply': 'display_visa_list', 'visa_list': instr_list}
-        elif msg['query'] == 'run_measurement':
-            choose_config(profile)
-        elif msg['query'] == 'plot':
-            x_1,x_2,y_1,y_2 = return_axis(
+        global reply, reply_1
+        if 'query' in msg.keys():
+            if msg['query'] == 'refresh_visa':
+                reply = {'reply': 'display_visa_list', 'visa_list': instr_list}
+            elif msg['query'] == 'run_measurement':
+                choose_config(profile)
+                # print('not stuck')
+        if 'plot' in msg.keys():
+            # print('data request sent')
+            x_1,y_1,x_2,y_2 = return_axis(
                 x1=msg['x1'],
-                x2=msg['x2'],
                 y1=msg['y1'],
+                x2=msg['x2'],
                 y2=msg['y2'],
                 selector=msg['selector']
                 )
-            reply_1 = {'plot':{'x1':x_1,'x2':x_2,'y1':y_1,'y2':y_2,'flag':True}}
+            reply_1 = {'plot':{'x1':x_1,'y1':y_1,'x2':x_2,'y2':y_2,'flag':True}}
+            # print('data sent')
     while True:
         msg = q.get()
+        # print(msg)
         msg_handler(msg)
 
 
 
 def pop_window(measurements=8):
-    global q, reply, profile
+    global q, reply, profile,start_time
     # Window
     window = tk.Tk()
     window.title('Specify your measurement below')
@@ -624,7 +632,8 @@ def pop_window(measurements=8):
             self.mynote = tk.Text(master=self.content,height=5,width=1)
             self.mynote.grid(row=6, column=0, sticky='new',padx=frame_padx,pady=frame_pady, columnspan=2)
             def run():
-                global profile
+                global profile, start_time
+                start_time = time.time()
                 save_config()
                 start_measurement()
             def stop():
@@ -1058,7 +1067,6 @@ def pop_window(measurements=8):
     window.after(50, initialize)
     window.mainloop()
 
-
 def plot_window():
     global q, reply_1, profile
     # Window
@@ -1150,37 +1158,43 @@ def plot_window():
             self.y_2 = Combobox(self.content, 'Y2', values=['None'])
             self.y_2.grid(row=3)
             self.selector = Combobox(self.content, 'data_selector', values=['data','pid','sweep'])
-            self.selector.grid(row=3)
+            self.selector.grid(row=4)
             self.selector.combobox.current(0)
-
 
             def event_get_axis(event):
                 global profile
                 if self.selector.combobox.get() == 'data':
-                    axis_list = profile['instrument_info']['variable_name'] + ['timestamp']
-                    self.x_1.combobox.config(valus=axis_list)
-                    self.y_1.combobox.config(valus=axis_list)
-                    self.x_2.combobox.config(valus=axis_list)
-                    self.y_2.combobox.config(valus=axis_list)
+                    axis_list = profile['instrument_info']['variable_name'] + ['timestamp']+ ['None']
+                    self.x_1.combobox.config(values=axis_list)
+                    self.x_1.combobox.current(0)
+                    self.y_1.combobox.config(values=axis_list)
+                    self.y_1.combobox.current(0)
+                    self.x_2.combobox.config(values=axis_list)
+                    self.y_2.combobox.config(values=axis_list)
                 elif self.selector.combobox.get() == 'sweep':
-                    axis_list = profile['sweep_info']['variable_name'] + ['timestamp']
-                    self.x_1.combobox.config(valus=axis_list)
-                    self.y_1.combobox.config(valus=axis_list)
-                    self.x_2.combobox.config(valus=axis_list)
-                    self.y_2.combobox.config(valus=axis_list)
+                    axis_list = profile['sweep_info']['variable_name'] + ['timestamp']+ ['None']
+                    self.x_1.combobox.config(values=axis_list)
+                    self.y_1.combobox.config(values=axis_list)
+                    self.x_2.combobox.config(values=axis_list)
+                    self.y_2.combobox.config(values=axis_list)
                 elif self.selector.combobox.get() == 'sweep':
-                    axis_list = ['time','temp']
-                    self.x_1.combobox.config(valus=axis_list)
-                    self.y_1.combobox.config(valus=axis_list)
-                    self.x_2.combobox.config(valus=axis_list)
-                    self.y_2.combobox.config(valus=axis_list)
+                    axis_list = ['time','temp']+ ['None']
+                    self.x_1.combobox.config(values=axis_list)
+                    self.y_1.combobox.config(values=axis_list)
+                    self.x_2.combobox.config(values=axis_list)
+                    self.y_2.combobox.config(values=axis_list)
 
             self.selector.combobox.bind('<<ComboboxSelected>>', event_get_axis)
 
-            self.update_button = ttk.Button(self.content, text="Update", command=update_plot_axis, padding=4)
+            self.update_button = ttk.Button(self.content, text="Start plotting", command=update_plot_axis, padding=4)
             self.update_button.grid(row=5, column=0, sticky='ew')
+            def Reset_plot():
+                global last_datalength
+                last_datalength = min(len(plot_name[0].x1),len(plot_name[0].y1))
+            self.reset_button = ttk.Button(self.content, text="Reset plot from now", command=Reset_plot, padding=4)
+            self.reset_button.grid(row=6, column=0, sticky='ew')
 
-    plot_name = None
+    plot_name = []
     class PlotFrame(tk.Frame):
         def __init__(self, plot_frame, width, height, row, column, rowspan=1, columnspan=1):
             super().__init__(
@@ -1191,7 +1205,7 @@ def plot_window():
                 highlightthickness=1.5,
                 bd=6
             )
-            plot_name = self
+            plot_name.append(self)
             self.grid(
                 row=row, column=column,
                 rowspan=rowspan, columnspan=columnspan,
@@ -1216,56 +1230,70 @@ def plot_window():
             canvas = FigureCanvasTkAgg(fg, master=self)  # A tk.DrawingArea.
             canvas.draw()
             canvas.get_tk_widget().grid()
-            self.x1 = None
+            self.x1 = np.array([None])
             self.x1_name = ''
-            self.x2 = None
+            self.x2 = np.array([None])
             self.x2_name = ''
-            self.y1 = None
+            self.y1 = np.array([None])
             self.y1_name = ''
-            self.y2 = None
+            self.y2 = np.array([None])
             self.y2_name = ''
 
             def drawimg():
-                global ax,ax1,ax2
+                global ax,ax1,ax2,start_time, last_datalength
                 ax.clear()
                 ax1.clear()
                 ax2.clear()
-                if self.x1 != None and self.y1 != None:
+                def normalize_timestamp(x,x_name):
+                    global start_time
+                    if x_name == 'timestamp' and x.any() != None:
+                        for i in range(0,len(x)):
+                            x[i] = x[i] - start_time
+                normalize_timestamp(self.x1, self.x1_name)
+                normalize_timestamp(self.x2, self.x2_name)
+                normalize_timestamp(self.y1, self.y1_name)
+                normalize_timestamp(self.y2, self.y2_name)
+
+                data_length = min(len(self.x1),len(self.y1))
+                if self.x1.any() != None and self.y1.any() != None:
                     ax.set_xlabel(self.x1_name)
                     ax.set_ylabel(self.y1_name)
-                    ax.plot(self.x1, self.y1, '.r')
-                    if self.y2 != None:
+                    ax.plot(self.x1[last_datalength:data_length-1], self.y1[last_datalength:data_length-1], '.r')
+                    if self.y2.any() != None:
                         ax1.set_ylabel(self.y2_name)
-                        ax1.plot(self.x1, self.y2, '.b')
-                    if self.x2 != None:
-                        ax1.set_xlabel(self.x2_name)
-                        ax1.plot(self.x2, self.y1, '.g')
+                        ax1.plot(self.x1[last_datalength:data_length-1], self.y2[last_datalength:data_length-1], '.b')
+                    if self.x2.any() != None:
+                        ax2.set_xlabel(self.x2_name)
+                        ax2.plot(self.x2[last_datalength:data_length-1], self.y1[last_datalength:data_length-1], '.g')
                 canvas.draw()
-                window.after(100,drawimg)
+                window.after(1000,drawimg)
 
             drawimg()
 
 
     def plotInWindow(dataToplot = None):
         if dataToplot!= None:
-            plot_name.x1 = dataToplot['x1']
-            plot_name.x1_name = plot_list[0].x_1.combobox.get()
-            plot_name.y1 = dataToplot['y1']
-            plot_name.y1_name = plot_list[0].y_1.combobox.get()
-            plot_name.x2 = dataToplot['x2']
-            plot_name.x2_name = plot_list[0].x_2.combobox.get()
-            plot_name.y2 = dataToplot['y2']
-            plot_name.y2_name = plot_list[0].y_2.combobox.get()
+            plot_name[0].x1 = dataToplot['x1']
+            plot_name[0].x1_name = plot_list[0].x_1.combobox.get()
+            plot_name[0].y1 = dataToplot['y1']
+            plot_name[0].y1_name = plot_list[0].y_1.combobox.get()
+            plot_name[0].x2 = dataToplot['x2']
+            plot_name[0].x2_name = plot_list[0].x_2.combobox.get()
+            plot_name[0].y2 = dataToplot['y2']
+            plot_name[0].y2_name = plot_list[0].y_2.combobox.get()
+            window.after(100, update_plot_axis)
 
 
     def update_plot_axis():
-        q.put({'query': 'plot',
+        q.put({'plot': 'plot',
                'x1': plot_list[0].x_1.combobox.get(),
-               'x2': plot_list[0].x_2.combobox.get(),
                'y1': plot_list[0].y_1.combobox.get(),
+               'x2': plot_list[0].x_2.combobox.get(),
                'y2': plot_list[0].y_2.combobox.get(),
                'selector': plot_list[0].selector.combobox.get()
-                })
+                }
+              )
+        # print('asking for data')
 
     def reply_handler():
         global reply_1
@@ -1273,7 +1301,7 @@ def plot_window():
             if 'plot' in reply_1.keys():
                 if reply_1['plot']['flag'] == True:
                     plotInWindow(reply_1['plot'])
-            reply_1 = None
+        reply_1 = None
         window.after(50, reply_handler)
 
     def initialize():
