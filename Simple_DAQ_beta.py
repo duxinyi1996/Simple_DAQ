@@ -297,7 +297,7 @@ def pop_window(measurements=8):
 
             def update_function_selection(event):
                 if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['2000ohm_4pt', '2400ohm_4pt','2000ohm_2pt', '2400ohm_2pt', '2000volt']
+                    func_list = ['2000ohm_4pt', '2400ohm_4pt','2000ohm_2pt', '2400ohm_2pt', '2000volt','2400amp']
                 elif self.instrument_name.combobox.get() == 'SR830':
                     func_list = ['x', 'y', 'R', 'theta', 'freq']
                 elif self.instrument_name.combobox.get() == 'hp34461A':
@@ -637,6 +637,7 @@ def pop_window(measurements=8):
                 save_config()
                 start_measurement()
             def stop():
+                stop_daq()
                 sys.exit()
             def save_config():
                 global profile
@@ -1151,11 +1152,11 @@ def plot_window():
 
             self.x_1 = Combobox(self.content, 'X1', values=['None'])
             self.x_1.grid(row=0)
-            self.y_1 = Combobox(self.content, 'Y1', values=['None'])
+            self.y_1 = Combobox(self.content, 'Y1, Y1 vs X1 in red', values=['None'])
             self.y_1.grid(row=1)
-            self.x_2 = Combobox(self.content, 'X2', values=['None'])
+            self.x_2 = Combobox(self.content, 'X2, Y1 vs X2 in green', values=['None'])
             self.x_2.grid(row=2)
-            self.y_2 = Combobox(self.content, 'Y2', values=['None'])
+            self.y_2 = Combobox(self.content, 'Y2, Y2 ys X1 in blue', values=['None'])
             self.y_2.grid(row=3)
             self.selector = Combobox(self.content, 'data_selector', values=['data','pid','sweep'])
             self.selector.grid(row=4)

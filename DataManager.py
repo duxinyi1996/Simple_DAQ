@@ -22,6 +22,7 @@ from Instrument_Drivers.keysightN6700c import *
 from Instrument_Drivers.transfer_heater_PID import *
 from Instrument_Drivers.noise_probe_PID import *
 
+global daq_flag
 
 class Mydata:
     def __init__(self):
@@ -190,6 +191,7 @@ class Mydata:
         print('sweep saved')
 
     def sweep_single(self):
+        global daq_flag
         start = self.sweep[data.sweep_list[0]]['sweep_bottom_limit']
         stop = self.sweep[data.sweep_list[0]]['sweep_up_limit']
         step_size = self.sweep[data.sweep_list[0]]['sweep_step_size']
@@ -200,11 +202,15 @@ class Mydata:
         flag = self.sweep[data.sweep_list[0]]['sweep_up_and_down_flag']
         num_steps = int(np.floor(abs(float(start) - float(stop)) / float(step_size))) + 1
         for val in np.linspace(float(start), float(stop), num_steps):
+            if not daq_flag:
+                break
             set_value(address=address, name=name, func=func, value=val)
             time.sleep(delay)
             self.sweep_update(value=[val])
         if flag:
             for val in np.linspace(float(stop), float(start), num_steps):
+                if not daq_flag:
+                    break
                 set_value(address=address, name=name, func=func, value=val)
                 time.sleep(delay)
                 self.sweep_update(value=[val])
@@ -213,6 +219,7 @@ class Mydata:
         self.sweep_on_flag = False
 
     def sweep_double(self):
+        global daq_flag
         start = []
         stop = []
         step_size = []
@@ -236,13 +243,15 @@ class Mydata:
         for val in np.linspace(start[0], stop[0], num_steps):
             set_value(address=address[0], name=name[0], func=func[0], value=val)
             for val_1 in np.linspace(start[1], stop[1], num_steps_1):
-                print(1)
+                if not daq_flag:
+                    break
                 set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                 time.sleep(delay[1])
                 self.sweep_update(value=[val, val_1])
             if flag[1]:
                 for val_1 in np.linspace(stop[1], start[1], num_steps_1):
-                    print(2)
+                    if not daq_flag:
+                        break
                     set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                     time.sleep(delay[1])
                     self.sweep_update(value=[val, val_1])
@@ -251,13 +260,15 @@ class Mydata:
             for val in np.linspace(stop[0], start[0], num_steps):
                 set_value(address=address[0], name=name[0], func=func[0], value=val)
                 for val_1 in np.linspace(start[1], stop[1], num_steps_1):
-                    print(3)
+                    if not daq_flag:
+                        break
                     set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                     time.sleep(delay[1])
                     self.sweep_update(value=[val, val_1])
                 if flag[1]:
                     for val_1 in np.linspace(stop[1], start[1], num_steps_1):
-                        print(4)
+                        if not daq_flag:
+                            break
                         set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                         time.sleep(delay[1])
                         self.sweep_update(value=[val, val_1])
@@ -396,6 +407,8 @@ def get_value(address='', name='', func=''):
             value = keithley2400_get_ohm_2pt(address)
         elif func == '2000volt':
             value = keithley2000_get_voltage_V(address)
+        elif func == '2400amp':
+            value = keithley2400_get_sour_currrent_A(address)
     elif name == 'SR830':
         if func == 'x':
             value = SR830_get_x(address)
@@ -462,8 +475,11 @@ def initialize_profile(profile):
 
 
 def no_sweep_config():
+    global daq_flag
     while data.sweep_on_flag:
         for i in range(0, data.data_size):
+            if not daq_flag:
+                break
             data.data_update()
             time.sleep(data.data_interval)
         data.data_save()
@@ -471,11 +487,14 @@ def no_sweep_config():
 
 
 def no_sweep_VNA():
+    global daq_flag
     while data.sweep_on_flag:
         data.data_update()
         time.sleep(data.data_interval)
         data.data_save()
         data.file_order_update()
+        if not daq_flag:
+            break
 
 
 def config_no_sweep():
@@ -496,10 +515,11 @@ def choose_config(profile):
     global profile_data
     profile_data = profile
     def run_main():
-        global profile_data
+        global profile_data, daq_flag
         profile = profile_data
         initialize_profile(profile)
         print('Measurements loaded')
+        daq_flag = True
         config_pid()
         if len(profile['sweep_info']['variable_name']) == 0:
             config_no_sweep()
@@ -553,6 +573,11 @@ def return_axis(x1=None,
     y_1 = get_axis(y1,selector)
     y_2 = get_axis(y2,selector)
     return x_1,y_1,x_2,y_2
+
+def stop_daq():
+    print('Data acquistion stopped, please wait until final data saved')
+    global daq_flag
+    daq_flag = False
 
 def print_dict(a):
     for key in a:

@@ -267,7 +267,7 @@ def pop_window():
 
             def update_function_selection(event):
                 if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['2000ohm_4pt', '2400ohm_4pt', '2000ohm_2pt', '2400ohm_2pt', '2000volt']
+                    func_list = ['2000ohm_4pt', '2400ohm_4pt', '2000ohm_2pt', '2400ohm_2pt', '2000volt', '2400amp']
                 elif self.instrument_name.combobox.get() == 'SR830':
                     func_list = ['x', 'y', 'R', 'theta', 'freq']
                 elif self.instrument_name.combobox.get() == 'hp34461A':

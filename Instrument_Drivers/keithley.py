@@ -126,7 +126,7 @@ def keithley2400_get_ohm_2pt(address):
 def keithley2000_get_voltage_V(address):
     try:
         keithley = rm.open_resource(address)
-        keithley.write("SENS:FUNC \'volt\'") # set volt
+        keithley.write("SENS:FUNC \"volt\"") # set volt
         keithley.write("SENS:volt:RANG:AUTO 1") # Auto range
         keithley.write("FORM:ELEM VOLT")
         string_data = keithley.query("READ?")

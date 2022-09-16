@@ -24,35 +24,37 @@ class MainData():
         self.all_data.update({label:{}})
         order = 0
         for root, dirs, files in os.walk(file_path):
-            for name in files:
-                order +=1
-                if order == 1:
-                    # dummy way of getting axis
-                    file = os.path.join(root, name)
-                    with open(file, 'rb') as f:
-                        file_content = f.readlines()
-                    for i in range(0, len(file_content)):
-                        if b'#' not in file_content[i]:
-                            break
-                    note = ''
-                    for x in file_content[:i-2]:
-                        note += x[2:].decode('utf-8')
-                    if label == 'data' and note!= '':
-                        self.Mynote = note
-                    axis = str(file_content[i-1][1:].decode('utf-8')).split()
-                    data_in_file = np.loadtxt(os.path.join(root, name))
-                    for i in range(0, len(axis)):
-                        self.all_data[label][axis[i]] = list(data_in_file[:,i])
-                    print(order, '. ', os.path.join(root, name))
-                    print('done')
-                else:
-                    data_in_file = np.loadtxt(os.path.join(root, name))
-                    for i in range(0, len(axis)):
-                        [self.all_data[label][axis[i]].append(x) for x in list(data_in_file[:,i])]
-                    print(order, '. ', os.path.join(root, name))
-                    print('done')
-                    # for key in self.all_data[label].keys():
-                    #     print(key, len(self.all_data[label][key]))
+            for name in sorted(files):
+                if 'Simple_DAQ_config' not in name:
+                    order +=1
+                    if order == 1:
+                        # dummy way of getting axis
+                        file = os.path.join(root, name)
+                        with open(file, 'rb') as f:
+                            file_content = f.readlines()
+                        for i in range(0, len(file_content)):
+                            if b'#' not in file_content[i]:
+                                break
+                        note = ''
+                        for x in file_content[:i-2]:
+                            note += x[2:].decode('utf-8')
+                        if label == 'data' and note!= '':
+                            self.Mynote = note
+                        print(file_content[i-1][1:])
+                        axis = str(file_content[i-1][1:].decode('utf-8')).split()
+                        data_in_file = np.loadtxt(os.path.join(root, name))
+                        for i in range(0, len(axis)):
+                            self.all_data[label][axis[i]] = list(data_in_file[:,i])
+                        print(order, '. ', os.path.join(root, name))
+                        print('done')
+                    else:
+                        data_in_file = np.loadtxt(os.path.join(root, name))
+                        for i in range(0, len(axis)):
+                            [self.all_data[label][axis[i]].append(x) for x in list(data_in_file[:,i])]
+                        print(order, '. ', os.path.join(root, name))
+                        print('done')
+                        # for key in self.all_data[label].keys():
+                        #     print(key, len(self.all_data[label][key]))
 
     def read_fridge_log(self):
         time = []
