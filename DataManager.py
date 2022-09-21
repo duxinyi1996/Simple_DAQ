@@ -156,15 +156,31 @@ class Mydata:
         self.dataToSave = np.column_stack(self.dataToSave)
         os.makedirs(self.file_path + '\\data' + '\\' + datetime.now().strftime('%Y%m%d'), exist_ok=True)
         file_name = self.file_name + f".{self.file_order}"
-        np.savetxt(self.file_path + '\\data' + '\\' + datetime.now().strftime('%Y%m%d') + "/" + file_name,
-                   self.dataToSave,
-                   delimiter='\t',
-                   header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
-                          '\n' + self.Mynote + '\n' + f"{self.axis}"
-                   )
+        file_real_path = self.file_path + '\\data' + '\\' + datetime.now().strftime('%Y%m%d') + "\\" + file_name
+        if self.last_data_length == 0:
+            while os.path.exists(file_real_path):
+                self.file_order_update()
+                file_name = self.file_name + f".{self.file_order}"
+                file_real_path = self.file_path + '\\data' + '\\' + datetime.now().strftime('%Y%m%d') + "\\" + file_name
+        if not os.path.exists(file_real_path):
+            np.savetxt(file_real_path,
+                       self.dataToSave,
+                       delimiter='\t',
+                       header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
+                              '\n' + self.Mynote + '\n' + f"{self.axis}"
+                       )
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                  file_name)
+            print('data file created')
+        else:
+            with open(file_real_path, "ab") as f:
+                np.savetxt(f, self.dataToSave, delimiter='\t')
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                      file_name)
+            print('data file updated')
         self.last_data_length = len(self.data['timestamp']['data'])
-        print(f"{datetime.now().strftime('%Y.%m.%d')}", " " , f"{datetime.now().strftime('%H:%M:%S')}","  ",file_name)
-        print('data saved')
+
+
 
     def sweep_update(self, value):
         self.sweep['timestamp']['data'] += [time.time()]
@@ -180,15 +196,32 @@ class Mydata:
         self.SweepToSave = np.column_stack(self.SweepToSave)
         os.makedirs(self.file_path + '\\sweep' + '\\' + datetime.now().strftime('%Y%m%d'), exist_ok=True)
         file_name = self.file_name + f"_sweep.{self.sweep_order}"
-        np.savetxt(self.file_path + '\\sweep' + '\\' + datetime.now().strftime('%Y%m%d') + "/" + file_name,
-                   self.SweepToSave,
-                   delimiter='\t',
-                   header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
-                          '\n' + self.Mynote + '\n' + f"{self.sweep_axis}"
-                   )
+        file_real_path = self.file_path + '\\sweep' + '\\' + datetime.now().strftime('%Y%m%d') + "\\" + file_name
+        if self.last_sweep_length == 0:
+            while os.path.exists(file_real_path):
+                self.sweep_order_update()
+                file_name = self.file_name + f"_sweep.{self.sweep_order}"
+                file_real_path = self.file_path + '\\sweep' + '\\' + datetime.now().strftime(
+                    '%Y%m%d') + "\\" + file_name
+        if not os.path.exists(file_real_path):
+            np.savetxt(file_real_path,
+                       self.SweepToSave,
+                       delimiter='\t',
+                       header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
+                              '\n' + self.Mynote + '\n' + f"{self.sweep_axis}"
+                       )
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                  file_name)
+            print('sweep file created')
+        else:
+            with open(file_real_path, "ab") as f:
+                np.savetxt(f, self.SweepToSave, delimiter='\t')
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                      file_name)
+            print('sweep file updated')
         self.last_sweep_length = len(self.sweep['timestamp']['data'])
-        print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ", file_name)
-        print('sweep saved')
+
+        self.sweep_order_update()
 
     def sweep_single(self):
         global daq_flag
@@ -215,7 +248,6 @@ class Mydata:
                 time.sleep(delay)
                 self.sweep_update(value=[val])
         self.sweep_save()
-        self.sweep_order_update()
         self.sweep_on_flag = False
 
     def sweep_double(self):
@@ -255,6 +287,8 @@ class Mydata:
                     set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                     time.sleep(delay[1])
                     self.sweep_update(value=[val, val_1])
+            if not daq_flag:
+                break
             time.sleep(delay[0])
         if flag[0]:
             for val in np.linspace(stop[0], start[0], num_steps):
@@ -272,10 +306,11 @@ class Mydata:
                         set_value(address=address[1], name=name[1], func=func[1], value=val_1)
                         time.sleep(delay[1])
                         self.sweep_update(value=[val, val_1])
+                if not daq_flag:
+                    break
                 time.sleep(delay[0])
         self.sweep_save()
         self.sweep_on_flag = False
-        self.sweep_order_update()
 
 
     def pid_save(self):
@@ -288,17 +323,34 @@ class Mydata:
         self.PidToSave = np.column_stack(self.PidToSave)
         os.makedirs(self.file_path + '\\pid' + '\\' + datetime.now().strftime('%Y%m%d'), exist_ok=True)
         file_name = self.file_name + f"_pid.{self.pid_order}"
-        np.savetxt(self.file_path + '\\pid' + '\\' + datetime.now().strftime('%Y%m%d') + "/" + file_name,
-                   self.PidToSave,
-                   delimiter='\t',
-                   header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
-                          '\n' + self.Mynote + '\n' + f"{self.pid_axis}"
-                   )
+        file_real_path = self.file_path + '\\pid' + '\\' + datetime.now().strftime('%Y%m%d') + "\\" + file_name
+        if self.last_pid_length == 0:
+            while os.path.exists(file_real_path):
+                self.pid_order_update()
+                file_name = self.file_name + f"_pid.{self.pid_order}"
+                file_real_path = self.file_path + '\\pid' + '\\' + datetime.now().strftime('%Y%m%d') + "\\" + file_name
+        if not os.path.exists(file_real_path):
+            np.savetxt(file_real_path,
+                       self.PidToSave,
+                       delimiter='\t',
+                       header=f"{datetime.now().strftime('%Y.%m.%d')}" + " " + f"{datetime.now().strftime('%H:%M:%S')}" +
+                              '\n' + self.Mynote + '\n' + f"{self.pid_axis}"
+                       )
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                  file_name)
+            print('PID file created')
+        else:
+            with open(file_real_path, "ab") as f:
+                np.savetxt(f, self.PidToSave, delimiter='\t')
+            print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ",
+                      file_name)
+            print('PID file updated')
         self.last_pid_length = len(self.pid['timestamp']['data'])
-        print(f"{datetime.now().strftime('%Y.%m.%d')}", " ", f"{datetime.now().strftime('%H:%M:%S')}", "  ", file_name)
-        print('PID saved')
+
+        self.pid_order_update()
 
     def pid_get_reading_noise(self):
+        global daq_flag
         noise_pid.reading = get_value(address=self.pid['instrument_address'],
                                       name=self.pid['instrument_name'],
                                       func=self.pid['function'])
@@ -306,7 +358,6 @@ class Mydata:
         setpoint = self.pid['setpoint']
         sweep_up_flag = True
         while noise_pid.update_flag:
-            self.pid_order_update()
             noise_pid.reading = get_value(address=self.pid['instrument_address'],
                                             name=self.pid['instrument_name'],
                                             func=self.pid['function'])
@@ -322,6 +373,8 @@ class Mydata:
                     highkp=self.pid['highkp'],
                     highki=self.pid['highki'],
                     highkd=self.pid['highkd'])
+            if not daq_flag:
+                break
             time.sleep(self.data_interval)
             if self.pid['sweep_up_and_down_flag']:
                 if temp >= setpoint and sweep_up_flag:
@@ -335,7 +388,7 @@ class Mydata:
                 if temp >= setpoint and sweep_up_flag:
                     noise_pid.update_flag = False
                     self.pid_save()
-
+        self.pid_save()
     def pid_get_reading_transfer(self):
         temp = transfer_pid_get(arduino_address=self.pid['arduino_address'])
         temp_initial = temp
@@ -360,11 +413,9 @@ class Mydata:
                     sweep_up_flag = False
                 elif temp <= setpoint and not sweep_up_flag :
                     transfer_pid.update_flag = False
-                    self.pid_order_update()
             else:
                 if temp >= setpoint and sweep_up_flag:
                     transfer_pid.update_flag = False
-                    self.pid_order_update()
 
     def pid_sweep_continuous(self):
         # print_dict(self.pid)
@@ -458,9 +509,8 @@ def set_value(value, address='', name='', func=''):
     read_write_lock = False
     return value
 
-
+'''-----------------------------------------talk to fromt panel---------------------------------------------------'''
 data = Mydata()
-
 
 def initialize_profile(profile):
     if len(profile['instrument_info']['variable_name']) > 0:
@@ -473,7 +523,6 @@ def initialize_profile(profile):
         data.pid = profile['pid_info']
     data.add_file(profile['file_info'])
 
-
 def no_sweep_config():
     global daq_flag
     while data.sweep_on_flag:
@@ -483,7 +532,9 @@ def no_sweep_config():
             data.data_update()
             time.sleep(data.data_interval)
         data.data_save()
-        data.file_order_update()
+        if not daq_flag:
+            break
+
 
 
 def no_sweep_VNA():
@@ -492,7 +543,7 @@ def no_sweep_VNA():
         data.data_update()
         time.sleep(data.data_interval)
         data.data_save()
-        data.file_order_update()
+
         if not daq_flag:
             break
 
@@ -522,8 +573,8 @@ def choose_config(profile):
         daq_flag = True
         config_pid()
         if len(profile['sweep_info']['variable_name']) == 0:
-            config_no_sweep()
             print('Monitor functioning')
+            config_no_sweep()
         elif len(profile['sweep_info']['variable_name']) == 1:
             t2 = threading.Thread(target=data.sweep_single)
             data.sweep_on_flag = True

@@ -4,8 +4,9 @@ from tkinter import ttk
 import tkinter as tk
 
 from DataManager import get_value,set_value
+from Instrument_Drivers.Instrument_dict import instrument_dict
 
-
+global instrument_dict
 # Size
 sizex = 1500
 sizey = 400
@@ -257,7 +258,13 @@ def pop_window():
             self.visa_query.grid(row=1, column=1, sticky='news', padx=frame_padx, pady=frame_pady, columnspan=3)
 
 
-            instr_list = ['None', 'keithley', 'SR830', 'hp34461A','PicoVNA108', 'vna','keysight N6700c','Agilent infiniiVision']
+            instr_list = ['None']
+            global instrument_dict
+            for name in instrument_dict['get'].keys():
+                instr_list.append(name)
+            for name in instrument_dict['set'].keys():
+                if name not in instr_list:
+                    instr_list.append(name)
 
             self.instrument_name = Combobox(self.content, 'Instrument_name', values=instr_list)
             self.instrument_name.grid(row=2)
@@ -266,30 +273,18 @@ def pop_window():
             self.function_selection.grid(row=3)
 
             def update_function_selection(event):
-                if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['2000ohm_4pt', '2400ohm_4pt', '2000ohm_2pt', '2400ohm_2pt', '2000volt', '2400amp']
-                elif self.instrument_name.combobox.get() == 'SR830':
-                    func_list = ['x', 'y', 'R', 'theta', 'freq']
-                elif self.instrument_name.combobox.get() == 'hp34461A':
-                    func_list = ['volt', 'ohm_4pt']
-                elif self.instrument_name.combobox.get() == 'PicoVNA108':
-                    func_list = ['S21', 'S12', 'S11', 'S22']
-                elif self.instrument_name.combobox.get() == 'vna':
-                    func_list = ['please input the VNA_settings']
-                elif self.instrument_name.combobox.get() == 'Agilent infiniiVision':
-                    func_list = ['counter']
-                else:
-                    func_list = []
+                global instrument_dict
+                func_list = ['None']
+                for name in instrument_dict['get'].keys():
+                    if self.instrument_name.combobox.get() == name:
+                        func_list = instrument_dict['get'][name]
                 self.function_selection.combobox.config(values=func_list)
                 self.function_selection.combobox.current(0)
-                if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['current', 'voltage']
-                elif self.instrument_name.combobox.get() == 'SR830':
-                    func_list = ['amplitude', 'freqency']
-                elif self.instrument_name.combobox.get() == 'keysight N6700c':
-                    func_list = ['volt @ channel 2']
-                else:
-                    func_list = []
+
+                func_list = ['None']
+                for name in instrument_dict['set'].keys():
+                    if self.instrument_name.combobox.get() == name:
+                        func_list = instrument_dict['set'][name]
                 self.set_function_selection.combobox.config(values=func_list)
                 self.set_function_selection.combobox.current(0)
 

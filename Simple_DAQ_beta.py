@@ -15,8 +15,10 @@ folder_path = os.getcwd()
 if folder_path not in sys.path:
     sys.path.append(folder_path) # easier to open driver files as long as Simple_DAQ.py is in the same folder with drivers
 from DataManager import *
+from Instrument_Drivers.Instrument_dict import instrument_dict
 import pickle
 
+global instrument_dict
 # Size
 sizex = 1500
 sizey = 925
@@ -284,33 +286,28 @@ def pop_window(measurements=8):
             self.visa_address.combobox.bind('<<ComboboxSelected>>', event_visa_address_refresh)
             self.visa_address.grid(row=2)
 
-            instr_list = ['None', 'keithley', 'SR830', 'hp34461A', 'Agilent infiniiVision']
-            instr_list_vna = ['None','PicoVNA108', 'vna']
+            global instrument_dict
+            instr_list_name = ['None']
+            for name in instrument_dict['get'].keys():
+                if name not in instrument_dict['vna']:
+                    instr_list_name.append(name)
+            instr_list_vna = ['None'] + instrument_dict['vna']
+
             if label == 'VNA':
                 self.instrument_name = Combobox(self.content, 'Instrument_name', values=instr_list_vna)
             else:
-                self.instrument_name = Combobox(self.content, 'Instrument_name', values=instr_list)
+                self.instrument_name = Combobox(self.content, 'Instrument_name', values=instr_list_name)
             self.instrument_name.grid(row=3)
 
             self.function_selection = Combobox(self.content, 'Function_selection')
             self.function_selection.grid(row=4)
 
             def update_function_selection(event):
-                if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['2000ohm_4pt', '2400ohm_4pt','2000ohm_2pt', '2400ohm_2pt', '2000volt','2400amp']
-                elif self.instrument_name.combobox.get() == 'SR830':
-                    func_list = ['x', 'y', 'R', 'theta', 'freq']
-                elif self.instrument_name.combobox.get() == 'hp34461A':
-                    func_list = ['volt', 'ohm_4pt']
-                elif self.instrument_name.combobox.get() == 'PicoVNA108':
-                    func_list = ['S21', 'S12', 'S11', 'S22']
-                elif self.instrument_name.combobox.get() == 'vna':
-                    func_list = ['please input the VNA_settings']
-                elif self.instrument_name.combobox.get() == 'Agilent infiniiVision':
-                    func_list = ['counter']
-
-                else:
-                    func_list = []
+                global instrument_dict
+                func_list = ['None']
+                for name in instrument_dict['get'].keys():
+                    if self.instrument_name.combobox.get() == name:
+                        func_list = instrument_dict['get'][name]
                 self.function_selection.combobox.config(values=func_list)
                 self.function_selection.combobox.current(0)
             self.instrument_name.combobox.bind('<<ComboboxSelected>>', update_function_selection)
@@ -418,7 +415,8 @@ def pop_window(measurements=8):
             self.visa_address.combobox.bind('<<ComboboxSelected>>', event_visa_address_refresh)
             self.visa_address.grid(row=2)
 
-            instr_list = ['None', 'keithley', 'SR830', 'keysight N6700c' ]
+            global instrument_dict
+            instr_list = ['None'] + list(instrument_dict['set'].keys())
             self.instrument_name = Combobox(self.content, 'Instrument_name', values=instr_list)
 
             self.instrument_name.grid(row=3)
@@ -427,14 +425,11 @@ def pop_window(measurements=8):
             self.function_selection.grid(row=4)
 
             def update_function_selection(event):
-                if self.instrument_name.combobox.get() == 'keithley':
-                    func_list = ['current', 'voltage']
-                elif self.instrument_name.combobox.get() == 'SR830':
-                    func_list = ['amplitude', 'freqency']
-                elif self.instrument_name.combobox.get() == 'keysight N6700c':
-                    func_list = ['volt @ channel 2']
-                else:
-                    func_list = []
+                global instrument_dict
+                func_list = ['None']
+                for name in instrument_dict['set'].keys():
+                    if self.instrument_name.combobox.get() == name:
+                        func_list = instrument_dict['set'][name]
                 self.function_selection.combobox.config(values=func_list)
                 self.function_selection.combobox.current(0)
 
@@ -675,21 +670,19 @@ def pop_window(measurements=8):
         self.sweep_continuous.grid(row=4, sticky='e')
 
     def noise_config(self):
-        instr_list = ['keithley', 'SR830', 'hp34461A']
-        self.instrument_name = Combobox(self.content, 'Instrument for Temp', values=instr_list,
+        global instrument_dict
+        instr_list_name = ['None'] + instrument_dict['pid_noise']
+        self.instrument_name = Combobox(self.content, 'Instrument for Temp', values=instr_list_name,
                                         box_color=box_color_2)
         self.instrument_name.grid(row=6)
         self.function_selection = Combobox(self.content, 'Function_selection', box_color=box_color_2)
         self.function_selection.grid(row=7)
         def update_function_selection(event):
-            if self.instrument_name.combobox.get() == 'keithley':
-                func_list = ['2000ohm_4pt', '2400ohm_4pt','2000ohm_2pt', '2400ohm_2pt']
-            elif self.instrument_name.combobox.get() == 'SR830':
-                func_list = ['x']
-            elif self.instrument_name.combobox.get() == 'hp34461A':
-                func_list = ['ohm_4pt']
-            else:
-                func_list = ['']
+            global instrument_dict
+            func_list = []
+            for name in instrument_dict['set'].keys():
+                if self.instrument_name.combobox.get() == name:
+                    func_list = instrument_dict['set'][name]
             self.function_selection.combobox.config(values=func_list)
             self.function_selection.combobox.current(0)
         self.instrument_name.combobox.bind('<<ComboboxSelected>>', update_function_selection)
